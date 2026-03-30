@@ -1,0 +1,10 @@
+streamlit>=1.44,<2
+numpy>=1.26,<3
+pandas>=2.2,<3
+plotly>=6,<7
+spacy>=3.8,<4
+wordcloud>=1.9,<2
+matplotlib>=3.9,<4
+nltk>=3.9,<4
+transformers>=4.51,<5
+torch>=2.6,<3
