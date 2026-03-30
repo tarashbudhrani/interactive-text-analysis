@@ -1,5 +1,6 @@
 .DS_Store
 .venv/
+.gh-config/
 __pycache__/
 *.pyc
 *.pyo

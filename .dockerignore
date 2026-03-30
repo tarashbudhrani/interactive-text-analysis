@@ -1,0 +1,11 @@
+.git
+.gitignore
+.gh-config
+.venv
+__pycache__
+.DS_Store
+Codex.dmg
+*.pyc
+*.pyo
+*.pyd
+

@@ -1,3 +1,14 @@
+---
+title: Interactive Text Analysis Platform
+emoji: 📊
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 8501
+python_version: 3.12.9
+pinned: false
+---
+
 # Interactive Text Analysis Platform
 
 This project is a Streamlit app for interactive NLP analysis on freeform text and CSV uploads. It includes:
@@ -26,6 +37,51 @@ If you are not inside the virtual environment, you can also run:
 
 ```bash
 .venv/bin/streamlit run app.py
+```
+
+## Hugging Face Spaces deployment
+
+This repo is now prepared for a free Hugging Face Docker Space.
+
+### Space settings
+
+- SDK: `Docker`
+- App port: `8501`
+- Python version metadata: `3.12.9`
+
+### What the Space uses
+
+- [Dockerfile](/Users/tarashbudhrani/Desktop/Project/Dockerfile) builds the environment
+- `requirements.txt` installs Python dependencies
+- spaCy English model is downloaded during image build
+- Streamlit starts on port `8501`, which Spaces expects for this app
+
+### Create the Space
+
+1. Go to [Hugging Face New Space](https://huggingface.co/new-space)
+2. Choose:
+   - Owner: your account
+   - Space name: `interactive-text-analysis`
+   - License: your choice
+   - SDK: `Docker`
+   - Visibility: private or public
+3. Create the empty Space
+4. Push this repo to the new Space repository
+
+### Push commands
+
+After creating the Space in the browser:
+
+```bash
+git remote add hf https://huggingface.co/spaces/<your-username>/interactive-text-analysis
+git push hf main
+```
+
+If the remote already exists, update it instead:
+
+```bash
+git remote set-url hf https://huggingface.co/spaces/<your-username>/interactive-text-analysis
+git push hf main
 ```
 
 ## Render deployment
