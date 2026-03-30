@@ -1,13 +1,4 @@
----
-title: Interactive Text Analysis Platform
-emoji: 📊
-colorFrom: blue
-colorTo: indigo
-sdk: docker
-app_port: 8501
-python_version: 3.12.9
-pinned: false
----
+
 
 # Interactive Text Analysis Platform
 
