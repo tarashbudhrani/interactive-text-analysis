@@ -1,0 +1,38 @@
+# Daily pull from Square and rebuild dbt models. Add repo secrets then enable.
+name: Daily inventory pipeline
+
+on:
+  schedule:
+    # 07:15 UTC daily — adjust for your timezone
+    - cron: "15 7 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run pipeline
+        run: python run_pipeline.py
+
+      - name: Upload DuckDB artifact
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: supply_chain_duckdb
+          path: data/supply_chain.duckdb
+          retention-days: 14

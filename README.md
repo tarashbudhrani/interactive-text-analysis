@@ -1,121 +1,78 @@
----
-title: Interactive Text Analysis Platform
-emoji: 📊
-colorFrom: blue
-colorTo: indigo
-sdk: docker
-app_port: 8501
-python_version: 3.12.9
-pinned: false
----
+# Retail inventory monitor (Square + Streamlit + Slack)
 
-# Interactive Text Analysis Platform
+Plug-and-play pipeline for small retailers using **Square** as the POS source of truth: pull catalogue, inventory counts, and recent orders; compute **sales velocity**, **days of cover**, and **reorder signals** from **your own Square data**; explore everything in **Streamlit**; optionally notify **Slack**.
 
-This project is a Streamlit app for interactive NLP analysis on freeform text and CSV uploads. It includes:
+## What runs by default
 
-- text cleaning and lemmatization
-- word cloud generation
-- n-gram analysis
-- emotion detection
-- sentiment detection
-- tone/speech classification
-- summary generation
+| Layer | Purpose |
+|--------|--------|
+| Square API | Catalogue, inventory on hand, order lines (90 days) |
+| dbt | `mart_stock_position`, `mart_reorder_signal`, freshness metadata |
+| Slack | Message **1**: low-stock / reorder rows · Message **2**: 7d/30d sales pulse + top movers (toggle off with `SLACK_ENABLE_SALES_METRICS=0`) |
 
-## Local setup
+CSV uploads through Square’s dashboard stay inside Square; if you maintain a side spreadsheet, set `MERGE_INVENTORY_CSV` to merge SKU quantities into `raw_square.inventory_counts` after each Square sync (see `ingest/merge_inventory_csv.py`).
 
-Use Python 3.12 to match the tested deployment/runtime target.
+## Quickstart
 
 ```bash
-python3.12 -m venv .venv
-source .venv/bin/activate
+python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-python -m spacy download en_core_web_sm
-streamlit run app.py
+cp .env.example .env
+# add SQUARE_ACCESS_TOKEN (and SLACK_WEBHOOK_URL if you use Slack)
+
+python run_pipeline.py
+streamlit run streamlit_app/app.py
 ```
 
-If you are not inside the virtual environment, you can also run:
+## GitHub Actions (every 24 hours)
+
+Workflow: [`.github/workflows/daily_inventory_pipeline.yml`](.github/workflows/daily_inventory_pipeline.yml)
+
+**Repository secrets**
+
+- `SQUARE_ACCESS_TOKEN` — required  
+- `SLACK_WEBHOOK_URL` — optional  
+
+Optional **Variables** (Settings → Secrets and variables → Actions → Variables): e.g. `SQUARE_ENVIRONMENT=production`.
+
+Each successful run uploads `data/supply_chain.duckdb` as an artifact (14-day retention) so you can wire a hosted Streamlit/other consumer without checking the DB into git.
+
+### Skipping work when POS data did not change
+
+For self-hosted runners or advanced setups where `data/supply_chain.duckdb` and `data/.square_pipeline_fp` persist between runs:
 
 ```bash
-.venv/bin/streamlit run app.py
+export SKIP_SQUARE_RELOAD_IF_UNCHANGED=1
+export SKIP_DBT_IF_RAW_UNCHANGED=1
+python run_pipeline.py
 ```
 
-## Hugging Face Spaces deployment
+Fingerprints ignore `loaded_at` timestamps so incidental ingestion noise does not invalidate the comparison.
 
-This repo is now prepared for a free Hugging Face Docker Space.
+## Slack rollout (“one by one”)
 
-### Space settings
+1. **Reorder alerts** — always sent first when `mart_reorder_signal` has rows (or when `SLACK_NOTIFY_WHEN_CLEAR=1` for an “all clear” ping).  
+2. **Sales pulse** — second webhook message with 7d/30d units/revenue/order counts and top movers; disable with `SLACK_ENABLE_SALES_METRICS=0`.
 
-- SDK: `Docker`
-- App port: `8501`
-- Python version metadata: `3.12.9`
+Global kill-switch: `DISABLE_SLACK_ALERTS=1`.
 
-### What the Space uses
+## Project layout
 
-- [Dockerfile](/Users/tarashbudhrani/Desktop/Project/Dockerfile) builds the environment
-- `requirements.txt` installs Python dependencies
-- spaCy English model is downloaded during image build
-- Streamlit starts on port `8501`, which Spaces expects for this app
+```
+├── ingest/
+│   ├── square_ingest.py       # Square → DuckDB raw_* layers
+│   ├── merge_inventory_csv.py # Optional SKU CSV overlay
+│   └── slack_alerts.py        # Webhook notifications
+├── models/                    # dbt staging / marts
+├── run_pipeline.py            # Orchestrator
+├── streamlit_app/             # Velocity, inventory, reorder
+└── .github/workflows/         # Daily schedule + artifact upload
+```
 
-### Create the Space
+## Phase 2 (off by default)
 
-1. Go to [Hugging Face New Space](https://huggingface.co/new-space)
-2. Choose:
-   - Owner: your account
-   - Space name: `interactive-text-analysis`
-   - License: your choice
-   - SDK: `Docker`
-   - Visibility: private or public
-3. Create the empty Space
-4. Push this repo to the new Space repository
-
-### Push commands
-
-After creating the Space in the browser:
+Extended Census + BLS ingestion and cost/pressure models stay in the repo but are **disabled** in `dbt_project.yml`. Turn them on only if you intentionally run:
 
 ```bash
-git remote add hf https://huggingface.co/spaces/<your-username>/interactive-text-analysis
-git push hf main
+python run_pipeline.py --with-extended-macro-ingest
 ```
-
-If the remote already exists, update it instead:
-
-```bash
-git remote set-url hf https://huggingface.co/spaces/<your-username>/interactive-text-analysis
-git push hf main
-```
-
-## Render deployment
-
-This repo includes `render.yaml` and `runtime.txt` for a Render web service deployment.
-
-### Recommended steps
-
-1. Push this project to a private GitHub repository.
-2. In Render, create a new Blueprint or Web Service from that repo.
-3. Confirm the build command:
-
-```bash
-pip install -r requirements.txt && python -m spacy download en_core_web_sm
-```
-
-4. Confirm the start command:
-
-```bash
-streamlit run app.py --server.port $PORT --server.address 0.0.0.0
-```
-
-5. Use at least the `Starter` plan for a more reliable demo because the app downloads and runs multiple transformer models.
-
-## Cold starts and resource notes
-
-- The first request after deploy or restart can be slow because Hugging Face models may need to download and initialize.
-- The app is configured to use CPU-safe defaults so it works in hosted Linux environments without Apple `mps`.
-- Matplotlib and Hugging Face caches are redirected to writable temporary directories.
-- Summary generation is the slowest feature and may take noticeably longer than the other analyses.
-
-## Smoke-test checklist
-
-- Enter sample text and verify word cloud, n-grams, emotion, sentiment, tone, and summary outputs.
-- Upload a CSV with a text column and a filterable column.
-- Test a filtered result with real text, nulls, and an empty selection.
-- Confirm the app shows progress/loading messages during first-run model warm-up.
