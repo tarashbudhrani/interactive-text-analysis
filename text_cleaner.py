@@ -1,17 +1,5 @@
 import re
-from functools import lru_cache
-
 import spacy
-from runtime_setup import configure_runtime_environment
-
-
-configure_runtime_environment()
-
-
-@lru_cache(maxsize=1)
-def _get_spacy_model():
-    return spacy.load("en_core_web_sm")
-
 
 def clean_text(text):
     text = text.lower()   #  Lowercase conversion
@@ -29,9 +17,9 @@ def clean_text(text):
 
 
 def clean_text_spacy(text):
-    nlp = _get_spacy_model()
-    doc = nlp(text)
-    word = []
+    nlp= spacy.load("en_core_web_sm")
+    doc= nlp(text)
+    word=[]
     for token in doc:
         if not token.is_stop and not token.is_punct:
             word.append(token.lemma_)

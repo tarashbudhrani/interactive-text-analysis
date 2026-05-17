@@ -1,10 +1,4 @@
 # WORD CLOUD
-from functools import lru_cache
-
-from runtime_setup import configure_runtime_environment
-
-configure_runtime_environment()
-
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 import streamlit as st
@@ -26,48 +20,56 @@ from nltk.util import ngrams
 from collections import Counter
 import plotly.graph_objects as go
 
-def plot_top_ngrams_bar_chart(tokens, gram_n=3, top_n=15):
+def build_ngram_figure(tokens, gram_n=3, top_n=15):
     ngram = list(ngrams(tokens, gram_n))
     ngram_counts = Counter(ngram).most_common(top_n)
-
     if not ngram_counts:
-        st.info(f"Not enough processed tokens were available to build {gram_n}-grams.")
-        return
+        return None
 
     labels = []
     counts = []
-    for biagram, count in ngram_counts:
-        labels.append(" ".join(biagram))
+    for gram, count in ngram_counts:
+        labels.append(" ".join(gram))
         counts.append(count)
 
-    # plotly bar chart
-    fig = go.Figure(data=
-    [go.Bar(
-        x=labels,
-        y=counts,
-        text=counts,
-        textposition="outside")])
+    gram_label = "Bigrams" if gram_n == 2 else "Trigrams" if gram_n == 3 else f"{gram_n}-grams"
+    fig = go.Figure(
+        data=[go.Bar(x=labels, y=counts, text=counts, textposition="outside")]
+    )
+    fig.update_layout(
+        height=550,
+        title=f"Top {top_n} {gram_label}",
+        xaxis_title="N-gram",
+        yaxis_title="Frequency",
+    )
+    return fig
 
-    # update layout
-    fig.update_layout(height=550,
-                      title=f"Top {top_n} {gram_n}-grams",
-                      xaxis_title="Labels",
-                      yaxis_title="Frequency")
 
-    st.plotly_chart(fig)
+def plot_top_ngrams_bar_chart(tokens, gram_n=3, top_n=15):
+    try:
+        fig = build_ngram_figure(tokens, gram_n=gram_n, top_n=top_n)
+        if fig is None:
+            raise ValueError("No n-grams found in the given token list")
+        st.plotly_chart(fig)
+    except Exception as e:
+        print(f"An Error Occured: {e}")
 
 
 #CREATING CHUNKS
 import spacy
 
+_nlp = None
 
-@lru_cache(maxsize=1)
-def _get_spacy_model():
-    return spacy.load("en_core_web_sm")
+
+def _get_nlp():
+    global _nlp
+    if _nlp is None:
+        _nlp = spacy.load("en_core_web_sm")
+    return _nlp
 
 
 def split_into_chunks_spacy(text, max_length=500):
-    nlp = _get_spacy_model()
+    nlp = _get_nlp()
     doc = nlp(text)
     chunks = []
     current_chunk = ""
@@ -89,23 +91,31 @@ def split_into_chunks_spacy(text, max_length=500):
 #EMOTIONAL ANALYSIS
 from transformers import pipeline
 import pandas as pd
-
 from collections import defaultdict
 
+_emotion_classifier = None
+_sentiment_classifier = None
+_tone_classifier = None
 
-@lru_cache(maxsize=1)
+
 def _get_emotion_classifier():
-    model_name = "j-hartmann/emotion-english-distilroberta-base"
-    return pipeline("text-classification", model=model_name, tokenizer=model_name, top_k=None, device=-1)
+    global _emotion_classifier
+    if _emotion_classifier is None:
+        model_name = "j-hartmann/emotion-english-distilroberta-base"
+        _emotion_classifier = pipeline(
+            "text-classification",
+            model=model_name,
+            tokenizer=model_name,
+            top_k=None,
+        )
+    return _emotion_classifier
 
 
 def detect_emotions(text):
     chunks = split_into_chunks_spacy(text)
-    if not chunks:
-        return pd.DataFrame(columns=["Emotion", "Score"])
-    emotion_classifier = _get_emotion_classifier()
     emotion_totals = {}
     emotion_count = defaultdict(int)
+    emotion_classifier = _get_emotion_classifier()
 
     for chunk in chunks:
         results = emotion_classifier(chunk)[0]
@@ -125,16 +135,22 @@ def detect_emotions(text):
 
 # SENTIMENT ANALYSIS
 
-@lru_cache(maxsize=1)
+
 def _get_sentiment_classifier():
-    model_name = "cardiffnlp/twitter-roberta-base-sentiment"
-    return pipeline("sentiment-analysis", model=model_name, tokenizer=model_name, top_k=None, device=-1)
+    global _sentiment_classifier
+    if _sentiment_classifier is None:
+        model_name = "cardiffnlp/twitter-roberta-base-sentiment"
+        _sentiment_classifier = pipeline(
+            "sentiment-analysis",
+            model=model_name,
+            tokenizer=model_name,
+            top_k=None,
+        )
+    return _sentiment_classifier
 
 
-# CREAING FUNCTION FOR SNETIMENT ANALYSIS
 def detect_overall_sentiment_avg(text):
     try:
-        sentiment_classifier = _get_sentiment_classifier()
         sentiment_labels = {
             "LABEL_0": "Negative",
             "LABEL_1": "Neutral",
@@ -142,12 +158,15 @@ def detect_overall_sentiment_avg(text):
         }
         chunks = split_into_chunks_spacy(text)
         if not chunks:
-            return {"error": "No text was available for sentiment analysis."}
+            return {"error": "No text to analyze after splitting."}
+
         score_total = {"Negative": 0.0, "Neutral": 0.0, "Positive": 0.0}
         chunk_count = len(chunks)
+        sentiment_classifier = _get_sentiment_classifier()
 
         for chunk in chunks:
-            results = sentiment_classifier(chunk)[0]
+            outputs = sentiment_classifier(chunk)
+            results = outputs[0] if outputs else []
             for res in results:
                 label = sentiment_labels[res["label"]]
                 score_total[label] += res["score"]
@@ -167,11 +186,6 @@ def detect_overall_sentiment_avg(text):
 
 #TONE OF SPEECH CLASSIFICATION
 
-@lru_cache(maxsize=1)
-def _get_zero_shot_classifier():
-    return pipeline("zero-shot-classification", model="facebook/bart-large-mnli", device=-1)
-
-
 labels = [
     "factual",
     "opinion",
@@ -189,9 +203,20 @@ labels = [
     "news",
     "argument"
 ]
+
+
+def _get_tone_classifier():
+    global _tone_classifier
+    if _tone_classifier is None:
+        _tone_classifier = pipeline(
+            "zero-shot-classification",
+            model="facebook/bart-large-mnli",
+        )
+    return _tone_classifier
+
+
 def classify_custom(text):
-    classifier = _get_zero_shot_classifier()
-    result = classifier(text, candidate_labels=labels)
+    result = _get_tone_classifier()(text, candidate_labels=labels)
     return {
         "text": text,
         "predicted_category": result["labels"][0],
@@ -201,48 +226,78 @@ def classify_custom(text):
 
 
 
-# TEXT SUMMARIZATION
+# TEXT SUMMARIZATION (Transformers v5 removed the "summarization" pipeline)
+from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
-@lru_cache(maxsize=1)
-def _get_summarizer():
-    return pipeline("summarization", model="facebook/bart-large-cnn", device=-1)
+_SUMMARY_MODEL_NAME = "facebook/bart-large-cnn"
+_summary_tokenizer = None
+_summary_model = None
+
+
+def _get_summary_model():
+    global _summary_tokenizer, _summary_model
+    if _summary_model is None:
+        _summary_tokenizer = AutoTokenizer.from_pretrained(_SUMMARY_MODEL_NAME)
+        _summary_model = AutoModelForSeq2SeqLM.from_pretrained(_SUMMARY_MODEL_NAME)
+    return _summary_tokenizer, _summary_model
+
+
+def _summary_token_limits(word_count):
+    max_new_tokens = min(130, max(15, word_count // 2))
+    min_new_tokens = min(max_new_tokens - 1, max(8, word_count // 4))
+    return max_new_tokens, min_new_tokens
+
+
+def _summarize_chunk(text, max_new_tokens=130, min_new_tokens=30):
+    tokenizer, model = _get_summary_model()
+    inputs = tokenizer(
+        text,
+        return_tensors="pt",
+        truncation=True,
+        max_length=1024,
+        padding=False,
+    )
+    summary_ids = model.generate(
+        inputs.input_ids,
+        attention_mask=inputs.attention_mask,
+        max_new_tokens=max_new_tokens,
+        min_new_tokens=min_new_tokens,
+        num_beams=4,
+        early_stopping=True,
+        do_sample=False,
+    )
+    return tokenizer.decode(summary_ids[0], skip_special_tokens=True)
 
 
 def summarize_large_text(text):
-    if not text or not text.strip():
-        return "No text was available for summary generation."
+    try:
+        if not text or not text.strip():
+            return "No text provided to summarize."
 
-    if len(text.split()) < 40:
-        return text.strip()
+        word_count = len(text.split())
+        if word_count < 40:
+            return (
+                "Text is too short to summarize reliably. "
+                "Please enter at least 40–50 words (a short paragraph or more)."
+            )
 
-    summarizer = _get_summarizer()
+        chunks = split_into_chunks_spacy(text, max_length=500)
+        if not chunks:
+            return "No text to summarize after splitting."
 
-    # Step 1: Split text into manageable chunks
-    chunks = split_into_chunks_spacy(text, max_length=500)  # Use pysbd or whatever you prefer
-    if not chunks:
-        return "No text was available for summary generation."
+        chunk_summaries = []
+        for chunk in chunks:
+            chunk_words = len(chunk.split())
+            max_new, min_new = _summary_token_limits(chunk_words)
+            chunk_summaries.append(_summarize_chunk(chunk, max_new, min_new))
 
-    # Step 2: Summarize each chunk individually
-    chunk_summaries = []
-    for chunk in chunks:
-        input_length = len(chunk.split())  # rough word count
-        max_summary_length = min(300, max(30, int(input_length * 0.7)))  # max 70% of input or cap at 300
-        min_summary_length = min(100, max(20, int(input_length * 0.3)))  # min 30% of input or cap at 100
-        min_summary_length = min(min_summary_length, max_summary_length - 1)
-        summary = summarizer(chunk, max_length=max_summary_length, min_length=min_summary_length, do_sample=False)[0]['summary_text']
-        chunk_summaries.append(summary)
+        combined_summary_text = " ".join(chunk_summaries)
+        if len(chunks) == 1:
+            return combined_summary_text.strip()
 
-    # Step 3: Combine all chunk summaries into one text
-    combined_summary_text = " ".join(chunk_summaries)
-    if not combined_summary_text.strip():
-        return "Summary generation could not produce output for this text."
-
-    # Optional Step 4: Summarize the combined summary for a concise result
-    input_length = len(combined_summary_text.split())  # rough word count
-    max_summary_length = max(30, int(input_length * 0.9))  # max 70% of input or cap at 300
-    min_summary_length = max(20, int(input_length * 0.3))  # min 30% of input or cap at 100
-    min_summary_length = min(min_summary_length, max_summary_length - 1)
-    final_summary = summarizer(combined_summary_text, max_length=max_summary_length, min_length=min_summary_length, do_sample=False)[0]['summary_text']
-
-    return final_summary
+        combined_words = len(combined_summary_text.split())
+        max_new, min_new = _summary_token_limits(combined_words)
+        return _summarize_chunk(combined_summary_text, max_new, min_new).strip()
+    except Exception as e:
+        return f"Summary failed: {e}"
 
