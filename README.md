@@ -2,7 +2,7 @@
 
 AI-powered text analysis: emotion, sentiment, tone, word clouds, n-grams, summaries, and PDF reports.
 
-**Live app:** [https://textlens.streamlit.app](https://textlens.streamlit.app) *(after Streamlit Cloud deploy)*
+**Live app:** [https://interactive-text-analysis.streamlit.app](https://interactive-text-analysis.streamlit.app)
 
 ## Run locally
 
