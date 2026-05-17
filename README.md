@@ -2,7 +2,18 @@
 
 AI-powered text analysis: emotion, sentiment, tone, word clouds, n-grams, summaries, and PDF reports.
 
-**Live app:** [https://interactive-text-analysis.streamlit.app](https://interactive-text-analysis.streamlit.app)
+## Live app (deploy under your GitHub account)
+
+The old URL `interactive-text-analysis.streamlit.app` is **not** linked to `tarashbudhrani@gmail.com` / your current GitHub login. Create a **new** app once:
+
+1. Sign in at **[share.streamlit.io](https://share.streamlit.io)** with **GitHub** (account: `tarashbudhrani`), not email-only.
+2. Open this deploy link:  
+   **[Deploy TextLens on Streamlit Cloud](https://share.streamlit.io/deploy?repository=tarashbudhrani/interactive-text-analysis&branch=main&mainModule=app.py)**
+3. Pick an app URL (e.g. `textlens`) → your live link will be:  
+   **`https://textlens.streamlit.app`** (or whatever name you choose)
+4. Wait 5–15 minutes for the first build.
+
+If you see “no access”: **Settings → Linked accounts** and connect the same GitHub user that owns the repo.
 
 ## Run locally
 
@@ -13,8 +24,6 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Deploy on Streamlit Community Cloud
+## Repo
 
-1. Push this repo to GitHub.
-2. Open [share.streamlit.io](https://share.streamlit.io).
-3. **New app** → repo `tarashbudhrani/interactive-text-analysis` → branch `main` → main file `app.py`.
+https://github.com/tarashbudhrani/interactive-text-analysis
