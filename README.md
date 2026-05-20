@@ -20,8 +20,58 @@
 
 ## How It Works
 
-Pastes raw text into the TextLens app and clicks "Analyze text" to trigger the full NLP pipeline
-<img width="1512" height="663" alt="image" src="https://github.com/user-attachments/assets/52f12532-2da0-4785-9493-e5fec8c23238" />
+## 🪄 How It Works
+
+**Step 1 — Paste your text & analyze**
+
+Paste any paragraph, review, or article and click **Analyze text** to trigger the full NLP pipeline.
+
+<img width="1512" alt="Text Input" src="https://github.com/user-attachments/assets/52f12532-2da0-4785-9493-e5fec8c23238" />
+
+---
+
+**Step 2 — Word Cloud**
+
+Most frequent terms visualized after cleaning and lemmatization — instantly shows dominant themes.
+
+<img width="1512" height="733" alt="image" src="https://github.com/user-attachments/assets/a90284e1-2678-47ac-856f-2bf98e06cae9" />
+
+
+---
+
+**Step 3 — N-gram Analysis**
+
+Top bigrams and trigrams ranked by frequency — reveals phrase-level patterns single words miss.
+
+<img width="988" height="719" alt="image" src="https://github.com/user-attachments/assets/01a627f4-440a-4c92-a7c2-6e776acc6bef" />
+
+
+---
+
+**Step 4 — Emotion Detection**
+
+7-class emotion scoring across text chunks, averaged into a confidence-ranked table and chart.
+
+<img width="988" height="576" alt="image" src="https://github.com/user-attachments/assets/57cdd1df-b42b-4e89-b1ac-c8ca90e47961" />
+
+
+---
+
+**Step 5 — Sentiment Analysis**
+
+Chunk-level positive / neutral / negative scores averaged into a single overall verdict.
+
+<img width="989" height="444" alt="image" src="https://github.com/user-attachments/assets/39db15c3-4fd0-48fd-8411-476653cde08b" />
+
+
+---
+
+**Step 6 — Tone Classification**
+
+Zero-shot classification across 15 tone labels — no labeled dataset needed, powered by BART-MNLI.
+
+<img width="971" height="554" alt="image" src="https://github.com/user-attachments/assets/28af499d-e505-436b-9d42-e55c4d76a646" />
+
 
 
 ---
