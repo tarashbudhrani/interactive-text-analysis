@@ -17,11 +17,11 @@
 | 📝 **Text Summarization** | `facebook/bart-large-cnn` | Abstractive summary (hierarchical chunking) |
 | 📄 **PDF Export** | fpdf2 + kaleido | Full report with all charts embedded |
 
-
 ---
+
 ## 🌐 Live Demo
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://interactive-text-analysis-pbfgf9a9tzapp7xvfv2ordt.streamlit.app)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://interactive-text-analysis-pbfgf9a9tzapp7xvfv2ordt.streamlit.app)
 
 👉 **[https://interactive-text-analysis-pbfgf9a9tzapp7xvfv2ordt.streamlit.app](https://interactive-text-analysis-pbfgf9a9tzapp7xvfv2ordt.streamlit.app)**
 
