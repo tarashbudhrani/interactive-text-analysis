@@ -4,6 +4,7 @@
 
 ---
 
+
 ## ✨ What it does
 
 | Feature | Model / Tool | Output |
@@ -15,6 +16,14 @@
 | 🎙️ **Tone Classification** | `facebook/bart-large-mnli` | Opinion, factual, story, command… (15 labels) |
 | 📝 **Text Summarization** | `facebook/bart-large-cnn` | Abstractive summary (hierarchical chunking) |
 | 📄 **PDF Export** | fpdf2 + kaleido | Full report with all charts embedded |
+
+
+---
+## 🌐 Live Demo
+
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://interactive-text-analysis-pbfgf9a9tzapp7xvfv2ordt.streamlit.app)
+
+👉 **[https://interactive-text-analysis-pbfgf9a9tzapp7xvfv2ordt.streamlit.app](https://interactive-text-analysis-pbfgf9a9tzapp7xvfv2ordt.streamlit.app)**
 
 ---
 
